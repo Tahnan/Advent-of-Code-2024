@@ -9,6 +9,12 @@ itself?
 I could.  It just took a lot of looking up the details of __lt__ and of sort(),
 which ignores the __gt__ that I tried to define.  So it took a while, but good
 learning experience, I guess?
+
+ADDENDUM: I realized, walking home, that "a full ordering" is a trap.  The
+rules don't guarantee transitivity; they "47|53" means that *if both pages are
+present*, 47 comes before 53.  But you could have A|B, B|C, C|A, as long as you
+never have a set of pages that includes all three.  I don't know if my input
+had this case, but it's nice to think I avoided a major pitfall.
 """
 from collections import defaultdict
 from pathlib import Path
