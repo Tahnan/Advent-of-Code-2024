@@ -18,6 +18,13 @@ Except that my first attempt:
 
 Debugging that took far, far longer than it should have.  (After which it all
 runs in under a second.)
+
+ADDENDUM: The examples glossed over the fact that if you had an X antenna at
+(0, 0) and one at (3, 6), not only would (6, 12) be an antinode, but so would
+(1, 2) and (2, 4).  I checked and, unsurprisingly since I got it right, the
+x-distance and y-distance between all 279 pairs of same-frequency antennae in
+my input had a GCD of 1.  I *suspect* that's by design, but I hope that I didn't
+just get lucky by avoiding a trap present in other people's inputs.
 """
 
 import itertools
