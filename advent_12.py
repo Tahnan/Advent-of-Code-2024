@@ -1,3 +1,17 @@
+"""
+Day 12: Space.  Why did it have to be space?
+
+Determining a region: sure, I can do that, that's just traversing a grid.
+
+Determining the perimeter of the region: all right, I'll have to think about
+what constitutes an edge, but sure, I can get there.
+
+Determining the number of sides of a region: please make it stop.
+
+Really, the only good thing going on here is that my debugging for the fifty
+line *helper* function worked really well by making it clear how each turn
+worked.  Also, super-necessary, because it was so hard for me to visualize.
+"""
 from pathlib import Path
 
 import aoc_util
@@ -97,8 +111,26 @@ def _get_sides(region, debug=False):
     return _count_sides(fences)
 
 
+def _turn(inner, outer, direction, turn_is_cw, wall_is_exterior):
+    # If we're following an exterior wall, turning clockwise means the inner
+    # space is the same and the new outer space is in the direction we're
+    # moving, from the inner space. Turning counterclockwise means the *outer*
+    # space is the same and the new *inner* space is the direction we're moving,
+    # from the *outer* space.
+    #
+    # And if we're following an interior wall, clockwise has the same *outer*
+    # space, counterclockwise has the same *inner* space.  I'd say "trust me,
+    # it makes sense", but even I don't trust me that it makes sense.
+    if wall_is_exterior == turn_is_cw:
+        outer = move(inner, direction)
+    else:
+        inner = move(outer, direction)
+    return inner, outer
+
+
 def _count_sides(fences, debug=False):
     sides = 0
+    wall_is_exterior = True
     while fences:
         inner, outer = min(fences)
         direction = (0, 1)
@@ -116,24 +148,23 @@ def _count_sides(fences, debug=False):
                 if debug:
                     print('-->', inner, outer)
                 continue
-            # otherwise, we'll have to turn CW or CCW.  Because we're following
-            # the "left" wall, turning clockwise means the inner space is the
-            # same and the new outer space is in the direction we're moving,
-            # from the inner space. Turning coutnerclockwise means the *outer*
-            # space is the same and the new *inner* space is the direction
-            # we're moving, from the *outer* space.
-            cw_outer = move(inner, direction)
-            if (inner, cw_outer) in fences:
-                outer = cw_outer
+            # otherwise, we'll have to turn CW or CCW.
+            new_inner, new_outer = _turn(
+                inner, outer, direction, True, wall_is_exterior
+            )
+            if (new_inner, new_outer) in fences:
+                inner, outer = new_inner, new_outer
                 direction = turn_cw(direction)
                 fences.remove((inner, outer))
                 sides += 1
                 if debug:
                     print('-CW->', inner, outer)
                 continue
-            ccw_inner = move(outer, direction)
-            if (ccw_inner, outer) in fences:
-                inner = ccw_inner
+            new_inner, new_outer = _turn(
+                inner, outer, direction, False, wall_is_exterior
+            )
+            if (new_inner, new_outer) in fences:
+                inner, outer = new_inner, new_outer
                 direction = turn_ccw(direction)
                 fences.remove((inner, outer))
                 sides += 1
@@ -142,6 +173,8 @@ def _count_sides(fences, debug=False):
                 continue
             # If neither is a fence, we must have closed the loop
             break
+        # Further walls will be exterior walls
+        wall_is_exterior = False
     return sides
 
 
@@ -183,7 +216,7 @@ if __name__ == '__main__':
         (part_one, {'data': DATA}),
         (part_two, {}),
         (part_two, {'data': TEST_E}),
-        (part_two, {'data': TEST_AB, 'debug': True}),
+        (part_two, {'data': TEST_AB}),
         (part_two, {'data': DATA}),
     ):
         result = fn(**kwargs)
