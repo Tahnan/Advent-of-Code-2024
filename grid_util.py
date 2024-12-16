@@ -1,6 +1,42 @@
-DIRECTIONS = ((-1, -1), (-1, 0), (-1, 1),
-              (0, -1),         (0, 1),
-              (1, -1), (1, 0), (1, 1))
+NORTH = (-1, 0)
+SOUTH = (1, 0)
+WEST = (0, -1)
+EAST = (0, 1)
+NORTHWEST = (-1, -1)
+SOUTHWEST = (1, -1)
+NORTHEAST = (-1, 1)
+SOUTHEAST = (1, 1)
+
+DIRECTIONS = (NORTH, NORTHEAST, EAST, SOUTHEAST,
+              SOUTH, SOUTHWEST, WEST, NORTHWEST)
+
+CARDINALS = (NORTH, EAST, SOUTH, WEST)
+
+
+def turn_cw(direction):
+    dx, dy = direction
+    return dy, -dx
+
+
+def turn_ccw(direction):
+    dx, dy = direction
+    return -dy, dx
+
+
+def turn_180(direction):
+    dx, dy = direction
+    return -dx, -dy
+
+
+turn_right = turn_cw
+turn_left = turn_ccw
+turn_around = turn_180
+
+
+def move(start, direction, distance=1):
+    x, y = start
+    dx, dy = direction
+    return (x + dx * distance, y + dy * distance)
 
 class Grid(dict):
     # Order is (row, column)
