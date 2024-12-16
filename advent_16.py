@@ -1,3 +1,4 @@
+from collections import defaultdict
 from math import inf
 
 from grid_util import Grid, EAST, turn_cw, turn_ccw, move
@@ -31,7 +32,6 @@ def part_one(data=TEST_CASE, debug=False):
     grid = parse_data(data)
     start, = {coord for coord, content in grid.items() if content == 'S'}
     end, = {coord for coord, content in grid.items() if content == 'E'}
-    direction = EAST
     lowest_cost = {(start, EAST): 0}
     current_options = {(start, EAST): 0}
     best_sol = inf
@@ -74,14 +74,15 @@ def part_two(data=TEST_CASE, debug=False):
     grid = parse_data(data)
     start, = {coord for coord, content in grid.items() if content == 'S'}
     end, = {coord for coord, content in grid.items() if content == 'E'}
-    direction = EAST
-    lowest_cost = {(start, EAST): 0}
-    current_options = {(start, EAST): (0, {start})}
+    lowest_cost = defaultdict(lambda: (inf, set()))
+    lowest_cost[(start, EAST)] = (0, {start})
+    current_options = {(start, EAST)}
     best_sol = inf
-    on_a_best_path = set()
     while current_options:
-        new_options = {}
-        for (location, direction), (cost, path) in current_options.items():
+        new_options = set()
+        for (location, direction) in current_options:
+            cost, path = lowest_cost[(location, direction)]
+
             # go straight
             forward_state = (move(location, direction), direction)
             move_cost = cost + 1
@@ -90,37 +91,48 @@ def part_two(data=TEST_CASE, debug=False):
                 continue
             if grid[forward_state[0]] == '#':
                 pass
-            elif lowest_cost.get(forward_state, inf) >= move_cost:
-                lowest_cost[forward_state] = move_cost
-                new_path = path | {forward_state[0]}
-                if forward_state[0] == end:
-                    if best_sol > move_cost:
-                        best_sol = move_cost
-                        on_a_best_path.clear()
-                    on_a_best_path.update(new_path)
-                else:
-                    # this works only as long as getting here with the same
-                    # cost takes the same number of moves.  I think?
-                    alt_path = new_options.get(forward_state, (None, set()))[1]
-                    new_options[forward_state] = (move_cost, new_path | alt_path)
+            elif forward_state[0] == end and move_cost > best_sol:
+                pass
+            else:
+                prev_cost, prev_path = lowest_cost[forward_state]
+                if move_cost <= prev_cost:
+                    new_path = path | {forward_state[0]}
+                    if move_cost == prev_cost:
+                        new_path |= prev_path
+                    lowest_cost[forward_state] = (move_cost, new_path)
 
+                    if forward_state[0] == end:
+                        best_sol = move_cost
+                    else:
+                        new_options.add(forward_state)
+
+            turn_cost = cost + 1000
             # turn CW
             clockwise_state = (location, turn_cw(direction))
-            turn_cost = cost + 1000
             if turn_cost >= best_sol:
                 continue
-            if lowest_cost.get(clockwise_state, inf) > turn_cost:
-                lowest_cost[clockwise_state] = turn_cost
-                alt_path = new_options.get(clockwise_state, (None, set()))[1]
-                new_options[clockwise_state] = (turn_cost, path | alt_path)
+            prev_cost, prev_path = lowest_cost[clockwise_state]
+            if turn_cost <= prev_cost:
+                new_path = path
+                if move_cost == prev_cost:
+                    new_path |= prev_path
+                lowest_cost[clockwise_state] = (turn_cost, new_path)
+                new_options.add(clockwise_state)
 
             # turn CCW
             ccw_state = (location, turn_ccw(direction))
-            if lowest_cost.get(ccw_state, inf) > turn_cost:
-                lowest_cost[ccw_state] = turn_cost
-                alt_path = new_options.get(ccw_state, (None, set()))[1]
-                new_options[ccw_state] = (turn_cost, path | alt_path)
+            prev_cost, prev_path = lowest_cost[ccw_state]
+            if turn_cost <= prev_cost:
+                new_path = path
+                if move_cost == prev_cost:
+                    new_path |= prev_path
+                lowest_cost[ccw_state] = (turn_cost, new_path)
+                new_options.add(ccw_state)
         current_options = new_options
+    on_a_best_path = set()
+    for (coord, _), (cost, path) in lowest_cost.items():
+        if coord == end:
+            on_a_best_path.update(path)
     if debug:
         annotated_grid = Grid({**grid})
         annotated_grid.update({coord: 'O' for coord in on_a_best_path})
