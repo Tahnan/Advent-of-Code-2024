@@ -8,6 +8,10 @@ worst showing on part one, but it's nothing exciting).
 
 I feel like I know how I want to approach part two, but I also feel like I want
 to lie down and sleep even more.  So I'm punting until tomorrow.
+
+---
+
+Tomorrow: oh god why does my test pass but the real data fails
 """
 from collections import Counter
 from pathlib import Path
@@ -100,8 +104,47 @@ def part_one(data=TEST_CASE, debug=False):
                if time_saved >= 100)
 
 
+def generate_coordinates_at_distance(coord, distance=20):
+    """
+    Given a coordinate and (optionally) a distance, generate all coordinates
+    within that (Manhattan) distance.
+    """
+    for x in range(-distance, distance + 1):
+        perpendicular = abs(distance) - x
+        for y in range(-perpendicular, perpendicular + 1):
+            yield move(coord, (x, y)), abs(x) + abs(y)
+
+
+# 2072373 is too high - though the test case passes!
 def part_two(data=TEST_CASE, debug=False):
-    pass
+    # Throw all of that out and start over
+    grid = parse_data(data)
+    start, = {coord for coord, content in grid.items() if content == 'S'}
+    end, = {coord for coord, content in grid.items() if content == 'E'}
+    distances_to_end = get_coord_to_remainder(grid, start, end)
+    cheats = Counter()
+    threshold = 50 if data == TEST_CASE else 100
+
+    for coord, distance in distances_to_end.items():
+        if distance < threshold:
+            # then it's too late to save enough time; bail
+            continue
+        # All we care about is reachable spaces, not paths
+        for dest, cheat_time in generate_coordinates_at_distance(coord):
+            time_from_here = distances_to_end.get(dest)
+            if time_from_here is None:
+                continue
+            time_saved = distance - time_from_here - cheat_time
+            if time_saved >= threshold:
+                cheats[time_saved] += 1
+
+    cheat_count = 0
+    for saved, num in sorted(cheats.items()):
+        if saved >= threshold:
+            if debug:
+                print(f'There are {num} cheats that save {saved} picoseconds.')
+            cheat_count += num
+    return cheat_count
 
 
 if __name__ == '__main__':
@@ -115,7 +158,7 @@ if __name__ == '__main__':
     for fn, kwargs in (
         (part_one, {}),
         (part_one, {'data': DATA}),
-        (part_two, {}),
+        (part_two, {'debug': True}),
         (part_two, {'data': DATA}),
     ):
         result = fn(**kwargs)
